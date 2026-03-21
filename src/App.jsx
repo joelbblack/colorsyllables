@@ -89,17 +89,15 @@ export default function App() {
     if (!inputText.trim()) return;
     setLoading(true); setError(null); setTokens(null); setShowSaveBar(false);
     try {
-    const res  = await fetch("/api/chat", {
-  method:"POST", headers:{
-    "Content-Type":"application/json",
-  },
-  body: JSON.stringify({
-    model:"claude-sonnet-4-20250514", max_tokens:4000,
-    system: SYSTEM_PROMPT,
-    messages:[{ role:"user", content:`Analyze this text:\n\n${inputText}` }],
-  }),
-});
-const data  = await res.json();
+      const res  = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-20250514", max_tokens:4000,
+          system: SYSTEM_PROMPT,
+          messages:[{ role:"user", content:`Analyze this text:\n\n${inputText}` }],
+        }),
+      });
+      const data  = await res.json();
       const raw   = data.content?.find(b => b.type==="text")?.text || "";
       const clean = raw.replace(/```json|```/gi,"").trim();
       setTokens(JSON.parse(clean));
