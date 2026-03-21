@@ -92,7 +92,7 @@ export default function App() {
     const res  = await fetch("https://api.anthropic.com/v1/messages", {
   method:"POST", headers:{
     "Content-Type":"application/json",
-    "x-api-key":"YOUR_KEY_HERE",
+    "x-api-key":"sk-ant-api03-NnD...dwAA",
     "anthropic-version":"2023-06-01",
   },
   body: JSON.stringify({
