@@ -89,7 +89,7 @@ export default function App() {
     if (!inputText.trim()) return;
     setLoading(true); setError(null); setTokens(null); setShowSaveBar(false);
     try {
-      const res  = await fetch("https://api/chat", {
+      const res  = await fetch("https:///api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           model:"claude-sonnet-4-20250514", max_tokens:4000,
