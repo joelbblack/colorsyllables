@@ -92,7 +92,7 @@ export default function App() {
     const res  = await fetch("/api/chat", {
   method:"POST", headers:{
     "Content-Type":"application/json",
-    "x-api-key":"sk-ant-api03-NnD...dwAA",
+    "x-api-key":"ANTHROPIC_API_KEY",
     "anthropic-version":"2023-06-01",
   },
   body: JSON.stringify({
