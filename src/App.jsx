@@ -27,6 +27,8 @@ const TYPES = {
   "C+le":          { light:"#4A6080", dark:"#8AAAC8",  label:"C+le",          pattern:"Cle",   rule:"Consonant + le found at the END of a word" },
 };
 
+const TYPE_KEYS = Object.keys(TYPES);
+
 // ── SAMPLE PASSAGES ──────────────────────────────────────────────────────────
 const SAMPLES = [
   { title:"Morning Message", text:"Good morning, friends! Today we will learn about spring storms. A storm can bring rain, wind, and thunder. Stay safe and stay warm inside." },
