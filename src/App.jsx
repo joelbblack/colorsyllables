@@ -526,32 +526,39 @@ export default function App() {
 
       {/* ── ABOUT TAB ── */}
       {activeTab==="about" && (
-        <div id="panel-about" role="tabpanel" style={{maxWidth:760, margin:"40px auto", padding:"0 24px", animation:"fadeIn 0.3s ease"}}>
+        <div id="panel-about" role="tabpanel" style={{maxWidth:760, margin:"40px auto", padding:"0 24px 40px", animation:"fadeIn 0.3s ease"}}>
           <div style={{background:D.panelBg, borderRadius:16, padding:"36px 40px", border:`1px solid ${D.border}`}}>
-            <h1 style={{fontSize:28, fontWeight:900, color:D.accent, marginBottom:8}}>Why This Works</h1>
-            <p style={{fontSize:16, lineHeight:1.8, color:D.subText, marginBottom:24}}>
+
+            <h1 style={{fontSize:28, fontWeight:900, color:D.accent, marginBottom:8}}>The Reading Research</h1>
+
+            <p style={{fontSize:16, lineHeight:1.8, color:D.subText, marginBottom:28}}>
               Color Syllables is built on the principles of <strong style={{color:D.text}}>Structured Literacy</strong> and the <strong style={{color:D.text}}>Science of Reading</strong>. By making syllable patterns visible through color, it supports orthographic mapping — the process by which the brain stores written words in long-term memory.
             </p>
+
             <div style={{display:"grid", gridTemplateColumns:"1fr 1fr", gap:16, marginBottom:28}}>
               {[
-                ["Orthographic Mapping","Color coding accelerates the brain's ability to recognize and store word patterns automatically."],
-                ["Phoneme-Grapheme Correspondence","Each color represents a consistent relationship between letters and sounds."],
-                ["Structured Literacy","Based on the six syllable types taught in Orton-Gillingham and related approaches (CLOVER)."],
-                ["UDL — Multiple Means of Representation","Visual color coding provides an additional representation layer for all learners, especially those with dyslexia."],
-              ].map(([title, desc])=>(
+                ["Orthographic Mapping", "When readers connect letters, sounds, and meaning repeatedly, words get stored in long-term memory. Color coding reinforces those connections by making sound-spelling patterns instantly visible."],
+                ["Phoneme-Grapheme Correspondence", "Each syllable color represents a consistent relationship between how letters look and how they sound — the foundation of systematic phonics instruction."],
+                ["Structured Literacy", "The six syllable types come from Orton-Gillingham and structured literacy research. Teaching them explicitly and in sequence is one of the most evidence-based approaches to reading instruction."],
+                ["UDL — Multiple Means of Representation", "Color coding gives students an additional visual channel for information that is usually only available as abstract text. This benefits all learners, and is especially meaningful for students with dyslexia or reading disabilities."],
+              ].map(([title, desc]) => (
                 <div key={title} style={{background:D.sideBg, borderRadius:10, padding:"16px 18px", border:`1px solid ${D.border}`}}>
                   <div style={{fontSize:14, fontWeight:800, color:D.accent, marginBottom:6}}>{title}</div>
                   <div style={{fontSize:13, lineHeight:1.7, color:D.subText}}>{desc}</div>
                 </div>
               ))}
             </div>
-            <div style={{background:D.sideBg, borderRadius:10, padding:"16px 20px", border:`1px solid ${D.border}`}}>
-              <div style={{fontSize:13, fontWeight:800, color:D.subText, letterSpacing:1, textTransform:"uppercase", marginBottom:8}}>The CLOVER Framework</div>
+
+            <div style={{background:D.sideBg, borderRadius:10, padding:"16px 20px", border:`1px solid ${D.border}`, marginBottom:24}}>
+              <div style={{fontSize:13, fontWeight:800, color:D.subText, letterSpacing:1, textTransform:"uppercase", marginBottom:4}}>The CLOVER Framework</div>
+              <div style={{fontSize:13, color:D.subText, lineHeight:1.6, marginBottom:12}}>
+                CLOVER is the mnemonic used in Orton-Gillingham instruction to remember the six syllable types in teaching order: <strong style={{color:D.text}}>C</strong>losed · <strong style={{color:D.text}}>L</strong> (C+le) · <strong style={{color:D.text}}>O</strong>pen · <strong style={{color:D.text}}>V</strong>owel Team · <strong style={{color:D.text}}>E</strong> (Magic-E) · <strong style={{color:D.text}}>R</strong>-Controlled
+              </div>
               <div style={{display:"flex", flexWrap:"wrap", gap:8}}>
-                {Object.entries(TYPES).map(([key,t])=>{
+                {Object.entries(TYPES).map(([key, t]) => {
                   const c = dark ? t.dark : t.light;
                   return (
-                    <div key={key} style={{display:"flex", alignItems:"center", gap:6, border:`2px solid ${c}`, borderRadius:7, padding:"4px 12px", background:`${c}18`}}>
+                    <div key={key} style={{display:"flex", alignItems:"center", gap:6, border:`2px solid ${c}`, borderRadius:7, padding:"5px 12px", background:`${c}18`}}>
                       <span style={{width:10, height:10, borderRadius:2, background:c, display:"inline-block"}}/>
                       <span style={{fontSize:13, fontWeight:700, color:c}}>{t.label}</span>
                       <span style={{fontSize:12, color:D.subText}}>— {t.rule}</span>
@@ -560,6 +567,35 @@ export default function App() {
                 })}
               </div>
             </div>
+
+            <div style={{background:D.sideBg, borderRadius:10, padding:"16px 20px", border:`1px solid ${D.border}`}}>
+              <div style={{fontSize:13, fontWeight:800, color:D.subText, letterSpacing:1, textTransform:"uppercase", marginBottom:6}}>Accessibility</div>
+              <div style={{fontSize:13, lineHeight:1.7, color:D.subText}}>
+                The <strong style={{color:D.text}}>read-aloud button</strong> uses the browser's built-in Web Speech API to speak the full passage aloud at a measured pace — no plugin required. An <strong style={{color:D.text}}>OpenDyslexic font toggle</strong> supports readers who benefit from a dyslexia-friendly typeface, a <strong style={{color:D.text}}>font size slider</strong> supports projector and low-vision use, and a <strong style={{color:D.text}}>dark mode</strong> reduces visual glare. Color pairs were selected to remain distinguishable for the most common forms of color vision deficiency. An <strong style={{color:D.text}}>aria-live region</strong> on the output announces new content to screen readers when the passage loads. All interactive elements include a <strong style={{color:D.text}}>skip to content link</strong> for keyboard users and <strong style={{color:D.text}}>ARIA labels</strong> so screen readers can announce their purpose.
+              </div>
+            </div>
+
+            <div style={{marginTop:24, display:"flex", flexDirection:"column", alignItems:"center", gap:12}}>
+              <div style={{fontSize:12, color:D.subText, opacity:0.7}}>
+                © 2025 Joel Black. All rights reserved.
+              </div>
+              <a href="https://buymeacoffee.com/YOURLINK" target="_blank" rel="noopener noreferrer"
+                aria-label="Support this tool — opens external donation page"
+                style={{
+                  display:"inline-flex", alignItems:"center", gap:8,
+                  background:"#FFDD00", color:"#000000",
+                  borderRadius:10, padding:"11px 28px",
+                  fontSize:15, fontWeight:800, textDecoration:"none",
+                  boxShadow:"0 3px 12px rgba(0,0,0,0.15)",
+                  transition:"transform 0.15s, box-shadow 0.15s",
+                }}
+                onMouseOver={e=>{e.currentTarget.style.transform="translateY(-2px)";e.currentTarget.style.boxShadow="0 6px 18px rgba(0,0,0,0.2)";}}
+                onMouseOut={e=>{e.currentTarget.style.transform="translateY(0)";e.currentTarget.style.boxShadow="0 3px 12px rgba(0,0,0,0.15)";}}
+              >
+                ☕ Buy me a coffee
+              </a>
+            </div>
+
           </div>
         </div>
       )}
