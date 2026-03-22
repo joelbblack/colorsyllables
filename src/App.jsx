@@ -1,4 +1,4 @@
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 
 // ── FONTS ────────────────────────────────────────────────────────────────────
 const fontFaceCSS = `
@@ -15,6 +15,7 @@ const fontFaceCSS = `
 }
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes fadeIn { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes slideUp { from { transform:translateY(100%); opacity:0; } to { transform:translateY(0); opacity:1; } }
 `;
 
 // ── SYLLABLE TYPES ───────────────────────────────────────────────────────────
@@ -59,12 +60,22 @@ export default function App() {
   const [dark, setDark]               = useState(true);
   const [dyslexic, setDyslexic]       = useState(false);
   const [showLegend, setShowLegend]   = useState(true);
-  const [focusType, setFocusType]     = useState(null); // single type highlight
+  const [focusType, setFocusType]     = useState(null);
   const [library, setLibrary]         = useState(SAMPLES);
   const [saveName, setSaveName]       = useState("");
-  const [activeTab, setActiveTab]     = useState("coder"); // coder | library | about
+  const [activeTab, setActiveTab]     = useState("coder");
   const [showSaveBar, setShowSaveBar] = useState(false);
+  const [fullscreen, setFullscreen]   = useState(false);
+
+  // ── WORD EDITOR STATE ──────────────────────────────────────────────────────
+  const [editingToken, setEditingToken] = useState(null); // { tokenIdx, word }
+  const [editSplit, setEditSplit]       = useState("");   // e.g. "puz/zle"
+  const [editTypes, setEditTypes]       = useState([]);   // array of stype per chunk
+  const editorInputRef                  = useRef(null);
+  const editorBarRef                    = useRef(null);
+
   const outputRef = useRef(null);
+  const appRef    = useRef(null);
 
   // ── THEME ──────────────────────────────────────────────────────────────────
   const D = {
@@ -83,15 +94,96 @@ export default function App() {
     accent:    dark ? "#4FA3E0" : "#1A6EA8",
     punctText: dark ? "#A0B4C8" : "#444444",
     dimText:   dark ? "#2A3D52" : "#C8D4E0",
+    editorBg:  dark ? "#0A1628" : "#1A3E6B",
   };
   const font = dyslexic ? "'OpenDyslexic', sans-serif" : "'Nunito', system-ui, sans-serif";
+
+  // ── OPEN WORD EDITOR ───────────────────────────────────────────────────────
+  const openEditor = (tokenIdx) => {
+    const token = tokens[tokenIdx];
+    if (!token || token.type !== "word") return;
+    const splitText = token.syllables.map(s => s.text).join("/");
+    const types     = token.syllables.map(s => s.stype);
+    setEditingToken({ tokenIdx });
+    setEditSplit(splitText);
+    setEditTypes(types);
+    // Focus the input after render
+    setTimeout(() => editorInputRef.current?.focus(), 50);
+  };
+
+  const closeEditor = () => {
+    setEditingToken(null);
+    setEditSplit("");
+    setEditTypes([]);
+  };
+
+  // ── SYNC TYPES WHEN SPLIT CHANGES ─────────────────────────────────────────
+  const handleSplitChange = (val) => {
+    setEditSplit(val);
+    const chunks = val.split("/").filter(c => c.length > 0);
+    setEditTypes(prev => {
+      const next = chunks.map((_, i) => prev[i] || "Closed");
+      return next;
+    });
+  };
+
+  const setChunkType = (chunkIdx, stype) => {
+    setEditTypes(prev => prev.map((t, i) => i === chunkIdx ? stype : t));
+  };
+
+  // ── CONFIRM EDIT ───────────────────────────────────────────────────────────
+  const confirmEdit = () => {
+    if (!editingToken) return;
+    const chunks = editSplit.split("/").filter(c => c.length > 0);
+    if (chunks.length === 0) { closeEditor(); return; }
+    const newSyllables = chunks.map((text, i) => ({
+      text,
+      stype: editTypes[i] || "Closed",
+    }));
+    setTokens(prev => prev.map((token, ti) => {
+      if (ti !== editingToken.tokenIdx) return token;
+      return { ...token, syllables: newSyllables };
+    }));
+    closeEditor();
+  };
+
+  // ── KEYBOARD HANDLING FOR EDITOR ──────────────────────────────────────────
+  useEffect(() => {
+    if (!editingToken) return;
+    const handler = (e) => {
+      if (e.key === "Escape") closeEditor();
+      if (e.key === "Enter" && e.target.tagName !== "BUTTON") confirmEdit();
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, [editingToken, editSplit, editTypes]);
+
+  // Trap focus inside editor bar when open
+  useEffect(() => {
+    if (!editingToken || !editorBarRef.current) return;
+    const focusable = editorBarRef.current.querySelectorAll(
+      'button, input, [tabindex]:not([tabindex="-1"])'
+    );
+    const first = focusable[0];
+    const last  = focusable[focusable.length - 1];
+    const trap  = (e) => {
+      if (e.key !== "Tab") return;
+      if (e.shiftKey) {
+        if (document.activeElement === first) { e.preventDefault(); last.focus(); }
+      } else {
+        if (document.activeElement === last) { e.preventDefault(); first.focus(); }
+      }
+    };
+    editorBarRef.current.addEventListener("keydown", trap);
+    return () => editorBarRef.current?.removeEventListener("keydown", trap);
+  }, [editingToken, editSplit]);
 
   // ── PROCESS ────────────────────────────────────────────────────────────────
   const processText = useCallback(async () => {
     if (!inputText.trim()) return;
     setLoading(true); setError(null); setTokens(null); setShowSaveBar(false);
     try {
-     const res  = await fetch("/api/chat", {
+      const res  = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
           model:"claude-sonnet-4-20250514", max_tokens:4000,
@@ -166,13 +258,9 @@ export default function App() {
     pw.document.close();
   }, [tokens, dark, fontSize, focusType]);
 
-  // ── CYCLE SYLLABLE TYPE ON CLICK ──────────────────────────────────────────
-  const [fullscreen, setFullscreen] = useState(false);
-  const appRef = useRef(null);
-  const toggleFullscreen = () => setFullscreen(v => !v);
-
-
-  const cycleSyllable = (tokenIdx, sylIdx) => {
+  // ── CYCLE SYLLABLE TYPE ON CLICK (single click = cycle, double = open editor) ──
+  const cycleSyllable = (tokenIdx, sylIdx, e) => {
+    e.stopPropagation();
     setTokens(prev => prev.map((token, ti) => {
       if (ti !== tokenIdx || token.type !== "word") return token;
       const newSyllables = token.syllables.map((syl, si) => {
@@ -185,21 +273,42 @@ export default function App() {
     }));
   };
 
+  const toggleFullscreen = () => setFullscreen(v => !v);
+
   // ── RENDER TOKEN ───────────────────────────────────────────────────────────
   const renderToken = (token, ti) => {
     if (token.type==="space") return <span key={ti}>{token.text==="\n" ? <br/> : " "}</span>;
     if (token.type==="punct") return <span key={ti} style={{color:D.punctText}}>{token.text}</span>;
     if (token.type==="word" && token.syllables) {
+      const wordText = token.syllables.map(s => s.text).join("");
+      const isEditing = editingToken?.tokenIdx === ti;
       return (
-        <span key={ti}>
+        <span
+          key={ti}
+          role="button"
+          tabIndex={0}
+          aria-label={`Word: ${wordText}. Double-click or press Enter to edit syllable breaks.`}
+          title="Double-click to edit syllable breaks"
+          onDoubleClick={() => openEditor(ti)}
+          onKeyDown={(e) => { if (e.key === "Enter") openEditor(ti); }}
+          style={{
+            outline: isEditing ? `3px solid ${D.accent}` : "none",
+            borderRadius: 3,
+            cursor: "pointer",
+          }}
+        >
           {token.syllables.map((syl, si) => {
             const t      = TYPES[syl.stype] || TYPES["Closed"];
             const c      = dark ? t.dark : t.light;
             const dimmed = focusType && syl.stype !== focusType;
             return (
-              <span key={si}
-                title={`${syl.stype} — click to change`}
-                onClick={() => cycleSyllable(ti, si)}
+              <span
+                key={si}
+                role="button"
+                tabIndex={-1}
+                title={`${syl.stype} — click to cycle type`}
+                aria-label={`Syllable: ${syl.text}, type: ${syl.stype}. Click to cycle type.`}
+                onClick={(e) => cycleSyllable(ti, si, e)}
                 style={{
                   color: dimmed ? D.dimText : c,
                   fontWeight: 700,
@@ -236,6 +345,144 @@ export default function App() {
     transition:"all 0.2s", fontFamily: font,
   });
 
+  // ── WORD EDITOR BAR ────────────────────────────────────────────────────────
+  const editChunks = editSplit.split("/").filter(c => c.length > 0);
+  const wordEditorBar = editingToken && (
+    <div
+      ref={editorBarRef}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Syllable editor"
+      style={{
+        position: "fixed", bottom: 0, left: 0, right: 0,
+        background: D.editorBg,
+        borderTop: `3px solid ${D.accent}`,
+        padding: "16px 24px",
+        display: "flex", flexWrap: "wrap", gap: 16, alignItems: "flex-start",
+        zIndex: 10000,
+        animation: "slideUp 0.2s ease",
+        boxShadow: "0 -4px 30px rgba(0,0,0,0.4)",
+        fontFamily: font,
+      }}
+    >
+      {/* LEFT: Split input */}
+      <div style={{display:"flex", flexDirection:"column", gap:6, minWidth:220}}>
+        <label
+          htmlFor="syllable-split-input"
+          style={{fontSize:11, fontWeight:700, color:"rgba(255,255,255,0.6)", textTransform:"uppercase", letterSpacing:1.5}}
+        >
+          Split with /
+        </label>
+        <input
+          id="syllable-split-input"
+          ref={editorInputRef}
+          value={editSplit}
+          onChange={e => handleSplitChange(e.target.value)}
+          aria-label="Enter syllable splits using forward slash"
+          placeholder="e.g. puz/zle"
+          style={{
+            background: "rgba(255,255,255,0.1)",
+            border: `2px solid ${D.accent}`,
+            borderRadius: 8,
+            padding: "8px 12px",
+            fontSize: 18,
+            fontWeight: 800,
+            color: "white",
+            fontFamily: font,
+            outline: "none",
+            width: 180,
+            letterSpacing: 1,
+          }}
+        />
+      </div>
+
+      {/* MIDDLE: Per-chunk type selectors */}
+      <div style={{display:"flex", flexWrap:"wrap", gap:14, flex:1, alignItems:"flex-start"}}>
+        {editChunks.map((chunk, ci) => {
+          const assignedType = editTypes[ci] || "Closed";
+          const assignedColor = dark ? TYPES[assignedType]?.dark : TYPES[assignedType]?.light;
+          return (
+            <div key={ci} style={{display:"flex", flexDirection:"column", gap:6}}>
+              <div style={{
+                fontSize: 20, fontWeight: 900,
+                color: assignedColor,
+                borderBottom: `3px solid ${assignedColor}`,
+                paddingBottom: 2,
+                letterSpacing: 1,
+                minWidth: 32,
+                textAlign: "center",
+              }}>{chunk}</div>
+              <div
+                role="group"
+                aria-label={`Select syllable type for "${chunk}"`}
+                style={{display:"flex", flexWrap:"wrap", gap:4}}
+              >
+                {TYPE_KEYS.map(key => {
+                  const t = TYPES[key];
+                  const c = dark ? t.dark : t.light;
+                  const active = assignedType === key;
+                  return (
+                    <button
+                      key={key}
+                      onClick={() => setChunkType(ci, key)}
+                      aria-pressed={active}
+                      aria-label={`${key}: ${t.rule}`}
+                      title={t.rule}
+                      style={{
+                        background: active ? c : "transparent",
+                        border: `2px solid ${c}`,
+                        color: active ? "white" : c,
+                        borderRadius: 6,
+                        padding: "3px 9px",
+                        fontSize: 12,
+                        fontWeight: 700,
+                        cursor: "pointer",
+                        transition: "all 0.15s",
+                        outline: "none",
+                      }}
+                      onFocus={e => e.target.style.boxShadow = `0 0 0 3px ${c}55`}
+                      onBlur={e => e.target.style.boxShadow = "none"}
+                    >{t.label}</button>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* RIGHT: Confirm / Cancel */}
+      <div style={{display:"flex", flexDirection:"column", gap:8, justifyContent:"center", alignSelf:"center"}}>
+        <button
+          onClick={confirmEdit}
+          aria-label="Confirm syllable edits"
+          style={{
+            background: D.accent, border:"none", color:"white",
+            borderRadius: 8, padding:"9px 20px",
+            fontSize:14, fontWeight:800, cursor:"pointer",
+            fontFamily: font,
+          }}
+          onFocus={e => e.target.style.outline = `3px solid white`}
+          onBlur={e => e.target.style.outline = "none"}
+        >✓ Done</button>
+        <button
+          onClick={closeEditor}
+          aria-label="Cancel editing, close editor"
+          style={{
+            background:"transparent", border:`2px solid rgba(255,255,255,0.3)`,
+            color:"rgba(255,255,255,0.6)",
+            borderRadius:8, padding:"7px 20px",
+            fontSize:13, fontWeight:700, cursor:"pointer",
+            fontFamily: font,
+          }}
+          onFocus={e => e.target.style.outline = `3px solid ${D.accent}`}
+          onBlur={e => e.target.style.outline = "none"}
+        >✕ Cancel</button>
+        <div style={{fontSize:11, color:"rgba(255,255,255,0.35)", textAlign:"center"}}>Esc to close</div>
+      </div>
+    </div>
+  );
+
   return (
     <div ref={appRef} style={{minHeight:"100vh", background:D.pageBg, fontFamily:font, color:D.text, transition:"all 0.3s"}}>
       <style>{fontFaceCSS}</style>
@@ -250,29 +497,36 @@ export default function App() {
             <div style={{fontSize:11, color:"rgba(255,255,255,0.6)", marginTop:1}}>Science of Reading · Structured Literacy</div>
           </div>
           <div style={{display:"flex", gap:8, alignItems:"center", flexWrap:"wrap"}}>
-            <button onClick={()=>setDyslexic(v=>!v)} style={{...btn(dyslexic,"#3DC87A"), fontSize:12}}>
+            <button onClick={()=>setDyslexic(v=>!v)} style={{...btn(dyslexic,"#3DC87A"), fontSize:12}}
+              aria-pressed={dyslexic}
+              aria-label={dyslexic ? "OpenDyslexic font active, click to turn off" : "Enable OpenDyslexic font"}>
               {dyslexic ? "✓ " : ""}OpenDyslexic Font
             </button>
-            <button onClick={()=>setDark(v=>!v)} style={{background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.3)", color:"white", borderRadius:8, padding:"6px 12px", fontSize:13, fontWeight:700, cursor:"pointer"}}>
+            <button onClick={()=>setDark(v=>!v)}
+              aria-label={dark ? "Switch to light mode" : "Switch to dark mode"}
+              style={{background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.3)", color:"white", borderRadius:8, padding:"6px 12px", fontSize:13, fontWeight:700, cursor:"pointer"}}>
               {dark ? "☀️ Light" : "🌙 Dark"}
             </button>
-            <button onClick={toggleFullscreen} style={{background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.3)", color:"white", borderRadius:8, padding:"6px 12px", fontSize:13, fontWeight:700, cursor:"pointer"}} title={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}>
+            <button onClick={toggleFullscreen}
+              aria-label={fullscreen ? "Exit fullscreen" : "Enter fullscreen"}
+              style={{background:"rgba(255,255,255,0.12)", border:"1.5px solid rgba(255,255,255,0.3)", color:"white", borderRadius:8, padding:"6px 12px", fontSize:13, fontWeight:700, cursor:"pointer"}}>
               {fullscreen ? "⊠ Exit Full" : "⛶ Fullscreen"}
             </button>
           </div>
         </div>
 
         {/* TABS */}
-        <div style={{maxWidth:1200, margin:"0 auto", display:"flex", paddingLeft:20}}>
+        <div style={{maxWidth:1200, margin:"0 auto", display:"flex", paddingLeft:20}} role="tablist" aria-label="Main navigation">
           {[["coder","⚡ Color Coder"],["library","📚 Passage Library"],["about","ℹ️ About"]].map(([id,label])=>(
-            <button key={id} onClick={()=>setActiveTab(id)} style={tabStyle(id)}>{label}</button>
+            <button key={id} onClick={()=>setActiveTab(id)} style={tabStyle(id)}
+              role="tab" aria-selected={activeTab===id} aria-controls={`panel-${id}`}>{label}</button>
           ))}
         </div>
       </div>
 
       {/* ── ABOUT TAB ── */}
       {activeTab==="about" && (
-        <div style={{maxWidth:760, margin:"40px auto", padding:"0 24px", animation:"fadeIn 0.3s ease"}}>
+        <div id="panel-about" role="tabpanel" style={{maxWidth:760, margin:"40px auto", padding:"0 24px", animation:"fadeIn 0.3s ease"}}>
           <div style={{background:D.panelBg, borderRadius:16, padding:"36px 40px", border:`1px solid ${D.border}`}}>
             <h1 style={{fontSize:28, fontWeight:900, color:D.accent, marginBottom:8}}>Why This Works</h1>
             <p style={{fontSize:16, lineHeight:1.8, color:D.subText, marginBottom:24}}>
@@ -312,7 +566,7 @@ export default function App() {
 
       {/* ── LIBRARY TAB ── */}
       {activeTab==="library" && (
-        <div style={{maxWidth:900, margin:"32px auto", padding:"0 20px", animation:"fadeIn 0.3s ease"}}>
+        <div id="panel-library" role="tabpanel" style={{maxWidth:900, margin:"32px auto", padding:"0 20px", animation:"fadeIn 0.3s ease"}}>
           <div style={{fontSize:13, fontWeight:700, color:D.subText, textTransform:"uppercase", letterSpacing:1.5, marginBottom:16}}>
             Saved Passages
           </div>
@@ -324,6 +578,7 @@ export default function App() {
                   <div style={{fontSize:13, color:D.subText, lineHeight:1.5}}>{item.text.slice(0,120)}{item.text.length>120?"…":""}</div>
                 </div>
                 <button onClick={()=>{ setInputText(item.text); setActiveTab("coder"); setTokens(null); }}
+                  aria-label={`Load passage: ${item.title}`}
                   style={{background:D.accent, border:"none", color:"white", borderRadius:8, padding:"8px 16px", fontSize:13, fontWeight:700, cursor:"pointer", whiteSpace:"nowrap"}}>
                   Load & Code →
                 </button>
@@ -335,13 +590,14 @@ export default function App() {
 
       {/* ── CODER TAB ── */}
       {activeTab==="coder" && (
-        <div style={{display:"flex", flex:1, flexWrap:"wrap", maxHeight:"calc(100vh - 130px)"}}>
+        <div id="panel-coder" role="tabpanel" style={{display:"flex", flex:1, flexWrap:"wrap", maxHeight:"calc(100vh - 130px)"}}>
 
           {/* INPUT SIDEBAR */}
           <div style={{width:tokens?"260px":"100%", minWidth:220, background:D.sideBg, borderRight:`2px solid ${D.border}`, display:"flex", flexDirection:"column", padding:16, gap:10, overflowY:"auto"}}>
-            <label style={{fontSize:11, fontWeight:700, color:D.subText, textTransform:"uppercase", letterSpacing:1.5}}>Your Text</label>
-            <textarea value={inputText} onChange={e=>setInputText(e.target.value)}
+            <label htmlFor="passage-input" style={{fontSize:11, fontWeight:700, color:D.subText, textTransform:"uppercase", letterSpacing:1.5}}>Your Text</label>
+            <textarea id="passage-input" value={inputText} onChange={e=>setInputText(e.target.value)}
               placeholder={"Morning message, reading passage,\nstudent writing — paste anything."}
+              aria-label="Paste your passage here"
               style={{flex:1, minHeight:tokens?200:180, border:`2px solid ${D.inputBdr}`, borderRadius:9, padding:12,
                       fontSize:14, lineHeight:1.6, resize:"vertical", outline:"none",
                       fontFamily:font, color:D.text, background:D.inputBg}}/>
@@ -352,6 +608,7 @@ export default function App() {
               <div style={{display:"flex", flexDirection:"column", gap:4}}>
                 {SAMPLES.map((s,i)=>(
                   <button key={i} onClick={()=>{ setInputText(s.text); setTokens(null); }}
+                    aria-label={`Load sample: ${s.title}`}
                     style={{background:"none", border:`1px solid ${D.border}`, borderRadius:6, padding:"5px 10px",
                             fontSize:12, color:D.subText, cursor:"pointer", textAlign:"left", fontFamily:font}}>
                     {s.title}
@@ -361,22 +618,26 @@ export default function App() {
             </div>
 
             <button onClick={processText} disabled={loading||!inputText.trim()}
+              aria-label="Analyze and color-code the passage"
+              aria-busy={loading}
               style={{background:loading||!inputText.trim()?(dark?"#1A2A3A":"#C8D4E0"):"linear-gradient(135deg,#1A3E6B,#2874A6)",
                       color:"white", border:"none", borderRadius:9, padding:"11px 0",
                       fontSize:15, fontWeight:800, cursor:loading||!inputText.trim()?"not-allowed":"pointer", fontFamily:font}}>
               {loading?"Analyzing…":"⚡ Color Code It"}
             </button>
 
-            {error && <div style={{background:dark?"#2D1515":"#FDEDEC", border:"1.5px solid #E74C3C", borderRadius:7, padding:"8px 12px", fontSize:13, color:dark?"#F1948A":"#922B21"}}>{error}</div>}
+            {error && <div role="alert" style={{background:dark?"#2D1515":"#FDEDEC", border:"1.5px solid #E74C3C", borderRadius:7, padding:"8px 12px", fontSize:13, color:dark?"#F1948A":"#922B21"}}>{error}</div>}
 
             {/* Save to library */}
             {showSaveBar && (
               <div style={{display:"flex", gap:6, animation:"fadeIn 0.3s ease"}}>
                 <input value={saveName} onChange={e=>setSaveName(e.target.value)}
                   placeholder="Name this passage…"
+                  aria-label="Name this passage to save it"
                   style={{flex:1, border:`1.5px solid ${D.inputBdr}`, borderRadius:7, padding:"6px 10px",
                           fontSize:13, color:D.text, background:D.inputBg, fontFamily:font, outline:"none"}}/>
                 <button onClick={saveToLibrary} disabled={!saveName.trim()}
+                  aria-label="Save passage to library"
                   style={{background:D.accent, border:"none", color:"white", borderRadius:7, padding:"6px 10px",
                           fontSize:13, fontWeight:700, cursor:"pointer"}}>Save</button>
               </div>
@@ -384,12 +645,14 @@ export default function App() {
 
             {tokens && (
               <div style={{display:"flex", gap:6}}>
-                <button onClick={()=>{setTokens(null);setShowSaveBar(false);setFocusType(null);}}
+                <button onClick={()=>{setTokens(null);setShowSaveBar(false);setFocusType(null);closeEditor();}}
+                  aria-label="Start a new passage"
                   style={{flex:1, background:"none", border:`1.5px solid ${D.accent}`, borderRadius:7, padding:"7px 0",
                           fontSize:13, color:D.accent, cursor:"pointer", fontWeight:700, fontFamily:font}}>
                   ↺ New Passage
                 </button>
-                <button onClick={()=>{setTokens(null);setInputText("");setShowSaveBar(false);setFocusType(null);}}
+                <button onClick={()=>{setTokens(null);setInputText("");setShowSaveBar(false);setFocusType(null);closeEditor();}}
+                  aria-label="Clear all text and output"
                   style={{flex:1, background:"none", border:`1.5px solid ${D.border}`, borderRadius:7, padding:"7px 0",
                           fontSize:13, color:D.subText, cursor:"pointer", fontWeight:600, fontFamily:font}}>
                   ✕ Clear All
@@ -404,15 +667,17 @@ export default function App() {
 
               {/* LEGEND + CONTROLS BAR */}
               <div style={{background:D.legendBg, borderBottom:`2px solid ${D.border}`, padding:"10px 18px", display:"flex", flexWrap:"wrap", gap:8, alignItems:"center", justifyContent:"space-between"}}>
-                <div style={{display:"flex", flexWrap:"wrap", gap:6, alignItems:"center"}}>
+                <div style={{display:"flex", flexWrap:"wrap", gap:6, alignItems:"center"}} role="group" aria-label="Focus filter by syllable type">
                   <span style={{fontSize:11, fontWeight:700, color:D.subText, textTransform:"uppercase", letterSpacing:1, marginRight:4}}>Focus:</span>
-                  <button onClick={()=>setFocusType(null)}
+                  <button onClick={()=>setFocusType(null)} aria-pressed={!focusType}
                     style={{...btn(!focusType, D.accent), fontSize:12, padding:"3px 10px"}}>All</button>
                   {Object.entries(TYPES).map(([key,t])=>{
                     const c = dark ? t.dark : t.light;
                     const active = focusType===key;
                     return (
                       <button key={key} onClick={()=>setFocusType(active?null:key)}
+                        aria-pressed={active}
+                        aria-label={`Focus on ${key} syllables`}
                         style={{background:active?c:"transparent", border:`2px solid ${c}`,
                                 color:active?"white":c, borderRadius:7, padding:"3px 10px",
                                 fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.2s"}}>
@@ -422,9 +687,13 @@ export default function App() {
                   })}
                 </div>
                 <div style={{display:"flex", gap:8, alignItems:"center"}}>
-                  <input type="range" min={18} max={72} value={fontSize} onChange={e=>setFontSize(Number(e.target.value))} style={{width:80, accentColor:D.accent}}/>
-                  <span style={{fontSize:12, fontWeight:700, color:D.subText, minWidth:28}}>{fontSize}px</span>
-                  <button onClick={downloadPDF}
+                  <label htmlFor="font-size-range" style={{fontSize:11, fontWeight:700, color:D.subText}}>Size</label>
+                  <input id="font-size-range" type="range" min={18} max={72} value={fontSize}
+                    onChange={e=>setFontSize(Number(e.target.value))}
+                    aria-label={`Font size: ${fontSize} pixels`}
+                    style={{width:80, accentColor:D.accent}}/>
+                  <span style={{fontSize:12, fontWeight:700, color:D.subText, minWidth:28}} aria-live="polite">{fontSize}px</span>
+                  <button onClick={downloadPDF} aria-label="Download as PDF"
                     style={{background:D.accent, border:"none", color:"white", borderRadius:8, padding:"5px 12px",
                             fontSize:12, fontWeight:800, cursor:"pointer"}}>⬇ PDF</button>
                 </div>
@@ -436,6 +705,7 @@ export default function App() {
                 padding: fullscreen ? "40px 60px" : "28px 36px",
                 overflowY: "auto",
                 background: D.panelBg,
+                paddingBottom: editingToken ? 200 : undefined,
                 ...(fullscreen ? {
                   position: "fixed", top: 0, left: 0,
                   width: "100vw", height: "100vh",
@@ -445,9 +715,9 @@ export default function App() {
                 <div style={{fontSize:11, fontWeight:600, color:D.subText, marginBottom:14, display:"flex", justifyContent:"space-between", alignItems:"center"}}>
                   <span style={{textTransform:"uppercase", letterSpacing:1.5, fontWeight:700}}>Color-Coded Output</span>
                   <div style={{display:"flex", gap:12, alignItems:"center"}}>
-                    <span style={{opacity:0.7}}>💡 Click any syllable to cycle its type</span>
+                    <span style={{opacity:0.7}}>💡 Click syllable to cycle · Double-click word to edit breaks</span>
                     {fullscreen && (
-                      <button onClick={toggleFullscreen}
+                      <button onClick={toggleFullscreen} aria-label="Exit fullscreen"
                         style={{background:D.accent, border:"none", color:"white", borderRadius:8,
                                 padding:"5px 14px", fontSize:13, fontWeight:700, cursor:"pointer"}}>
                         ⊠ Exit Fullscreen
@@ -455,14 +725,15 @@ export default function App() {
                     )}
                   </div>
                 </div>
-                <div style={{fontSize:fontSize, lineHeight:1.9, fontFamily:font}}>
+                <div style={{fontSize:fontSize, lineHeight:1.9, fontFamily:font}} role="region" aria-label="Color-coded syllable output">
                   {tokens.map(renderToken)}
                 </div>
               </div>
 
               {/* STATS BAR */}
               {stats && stats.total > 0 && (
-                <div style={{background:D.sideBg, borderTop:`2px solid ${D.border}`, padding:"14px 24px"}}>
+                <div style={{background:D.sideBg, borderTop:`2px solid ${D.border}`, padding:"14px 24px"}}
+                  role="region" aria-label="Syllable type statistics">
                   <div style={{fontSize:11, fontWeight:700, color:D.subText, textTransform:"uppercase", letterSpacing:1.5, marginBottom:10}}>
                     Passage Analysis — {stats.total} syllables
                   </div>
@@ -475,7 +746,9 @@ export default function App() {
                       return (
                         <div key={key} style={{display:"flex", alignItems:"center", gap:10}}>
                           <div style={{width:90, fontSize:12, fontWeight:700, color:c, flexShrink:0}}>{t.label}</div>
-                          <div style={{flex:1, height:14, background:dark?"#1A2A3A":"#E8EDF4", borderRadius:7, overflow:"hidden"}}>
+                          <div style={{flex:1, height:14, background:dark?"#1A2A3A":"#E8EDF4", borderRadius:7, overflow:"hidden"}}
+                            role="progressbar" aria-valuenow={pct} aria-valuemin={0} aria-valuemax={100}
+                            aria-label={`${t.label}: ${count} syllables, ${pct}%`}>
                             <div style={{width:`${pct}%`, height:"100%", background:c, borderRadius:7, transition:"width 0.5s ease"}}/>
                           </div>
                           <div style={{width:50, fontSize:12, fontWeight:700, color:D.subText, textAlign:"right", flexShrink:0}}>{count} ({pct}%)</div>
@@ -501,13 +774,17 @@ export default function App() {
 
           {/* LOADING */}
           {loading && (
-            <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16}}>
-              <div style={{width:46, height:46, border:`5px solid ${D.border}`, borderTop:`5px solid ${D.accent}`, borderRadius:"50%", animation:"spin 0.8s linear infinite"}}/>
+            <div style={{flex:1, display:"flex", alignItems:"center", justifyContent:"center", flexDirection:"column", gap:16}}
+              role="status" aria-live="polite" aria-label="Analyzing syllables, please wait">
+              <div style={{width:46, height:46, border:`5px solid ${D.border}`, borderTop:`5px solid ${D.accent}`, borderRadius:"50%", animation:"spin 0.8s linear infinite"}} aria-hidden="true"/>
               <div style={{fontSize:15, fontWeight:700, color:D.accent}}>Analyzing syllables…</div>
             </div>
           )}
         </div>
       )}
+
+      {/* ── WORD EDITOR BAR (fixed bottom) ── */}
+      {wordEditorBar}
     </div>
   );
 }
