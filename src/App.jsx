@@ -443,18 +443,34 @@ export default function App() {
           onKeyDown={e => { if (e.key === "Enter") speakMode ? speak(wordText) : openEditor(ti); }}
           style={{ outline: isEditing ? `3px solid ${D.accent}` : "none", borderRadius:3, cursor:"pointer" }}>
           {token.syllables.map((syl, si) => {
-            const t      = activeTypes[syl.stype] || activeTypes[activeTypeKeys[0]];
-            const c      = dark ? t.dark : t.light;
-            const dimmed = focusType && syl.stype !== focusType;
+            const t        = activeTypes[syl.stype] || activeTypes[activeTypeKeys[0]];
+            const c        = dark ? t.dark : t.light;
+            const dimmed   = focusType && syl.stype !== focusType;
+            const prevSyl  = token.syllables[si - 1];
+            const sameAsPrev = prevSyl && prevSyl.stype === syl.stype;
             return (
-              <span key={si} role="button" tabIndex={-1}
-                title={speakMode ? `Hear "${wordText}"` : `${syl.stype} — click to cycle`}
-                onClick={speakMode ? undefined : e => cycleSyllable(ti, si, e)}
-                style={{ color: dimmed ? D.dimText : c, fontWeight:700,
-                  borderBottom: `3px solid ${dimmed ? D.dimText : c}`,
-                  paddingBottom:1, cursor:"pointer",
-                  transition:"color 0.15s, border-color 0.15s", userSelect:"none" }}>
-                {syl.text}
+              <span key={si} style={{display:"inline"}}>
+                {sameAsPrev && (
+                  <span aria-hidden="true" style={{
+                    color: dimmed ? D.dimText : c,
+                    fontWeight:900,
+                    fontSize:"0.6em",
+                    verticalAlign:"middle",
+                    margin:"0 1px",
+                    userSelect:"none",
+                    borderBottom: `3px solid ${dimmed ? D.dimText : c}`,
+                    paddingBottom:1,
+                  }}>·</span>
+                )}
+                <span role="button" tabIndex={-1}
+                  title={speakMode ? `Hear "${wordText}"` : `${syl.stype} — click to cycle`}
+                  onClick={speakMode ? undefined : e => cycleSyllable(ti, si, e)}
+                  style={{ color: dimmed ? D.dimText : c, fontWeight:700,
+                    borderBottom: `3px solid ${dimmed ? D.dimText : c}`,
+                    paddingBottom:1, cursor:"pointer",
+                    transition:"color 0.15s, border-color 0.15s", userSelect:"none" }}>
+                  {syl.text}
+                </span>
               </span>
             );
           })}
