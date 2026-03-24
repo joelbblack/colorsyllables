@@ -89,53 +89,67 @@ const BLOG_POSTS = [
     id:1, pinned:true,
     title:"How Color Coding Syllables Supports Orthographic Mapping",
     date:"March 2026",
-    preview:"When students see syllable patterns highlighted in consistent colors, the brain begins to store those patterns as visual anchors. This is the core of orthographic mapping — and it is why color works.",
-    content:`When students see syllable patterns highlighted in consistent colors, the brain begins to store those patterns as visual anchors. This is the core of orthographic mapping — and it is why color works.
+    preview:"Orthographic mapping is not a strategy — it's what happens in the brain when phonics instruction actually works. Color makes the patterns stick faster because students can see them before they can explain them.",
+    content:`Orthographic mapping is not a strategy — it's what happens in the brain when phonics instruction actually works. It's the process by which words move from conscious decoding into automatic recognition. Color makes that happen faster because students can see the patterns before they can fully explain them.
 
-Orthographic mapping is the process by which skilled readers store written words in long-term memory. It happens when a reader connects the pronunciation of a word, its meaning, and its spelling into a single unified memory trace. The more a reader notices the sound-spelling patterns inside a word — not just the word as a whole — the faster that mapping happens.
+Here's what that looks like in practice. A student sees the word 'story' broken into two syllables — sto in yellow, ry in blue. They haven't memorized the open syllable rule yet. But they've now seen that yellow syllable ending in a vowel enough times that something is starting to click. The color is doing work the rule hasn't finished doing yet.
 
-Color coding makes those patterns impossible to ignore. A student who has seen dozens of open syllables in yellow begins to associate that color with the long vowel rule before they can even articulate why. The color becomes a retrieval cue. The pattern becomes automatic.
+That's the mechanism. The color becomes a retrieval cue before the explicit knowledge becomes automatic. You're building the scaffold while the brain is still constructing the wall.
 
-This is not a replacement for explicit phonics instruction. It is a visual amplifier for it. The teacher names the rule. The color makes the rule visible every time the student reads. Over time students internalize the pattern — and the color fades into the background as the automaticity takes over.`,
+This is why I don't think of Color Syllables as a supplement to phonics instruction. It's a visual layer on top of it. The teacher still has to name the rule, model it, practice it. But every time a student reads a color-coded passage, they're getting another repetition of the pattern without it feeling like a drill. That matters for students who need more exposures than a typical lesson can provide — which in a special education classroom is most of them.
+
+The research on orthographic mapping comes largely from David Kilpatrick's work. If you haven't read Equipped for Reading Success, it's worth your time. The short version: phonemic awareness plus letter-sound knowledge equals words stored in long-term memory. Color coding is a way to keep both of those active while students are reading connected text.`,
   },
   {
     id:2, pinned:true,
-    title:"Using Color Syllables with California Mission Vocabulary",
+    title:"Using Color Syllables with California History Vocabulary",
     date:"March 2026",
-    preview:"Mission-era California vocabulary is a goldmine for syllable instruction. Words like 'colonization,' 'rancho,' and 'pueblo' light up the color map in rich and predictable ways.",
-    content:`Mission-era California vocabulary is a goldmine for syllable instruction. Words like 'colonization,' 'rancho,' and 'pueblo' light up the color map in rich and predictable ways.
+    preview:"One look at the California history curriculum and you'll see it's a goldmine for word study. The word 'California' itself has four syllable types in it. That's your entry point.",
+    content:`One look at the California history curriculum and you'll see it's a goldmine for word study. The vocabulary that comes out of that period — colonization, agriculture, genocide, vaquero, pueblo, rancho — is long, Latinate, Spanish-origin, and structurally predictable. That combination is almost ideal for syllable instruction.
 
-Spanish-origin and Latinate words tend to be heavily multisyllabic with predictable stress and vowel patterns. This makes California history content almost ideal for structured literacy work — the academic vocabulary students need to acquire is also the vocabulary that most rewards syllabic analysis.
+The word 'California' itself: Cal (closed), i (open), for (r-controlled), ni (open), a (open). Four syllable types in a word students already know and care about. That's your entry point.
 
-Take the word 'colonization': col (closed) · o (open) · ni (open) · za (open) · tion (vowel team). Five syllables, four different types represented, all following predictable rules. Running it through the color coder gives students a map of a word they would otherwise guess at or skip entirely.
+Color Syllables works especially well at the single-word level for vocabulary study. Bump the font size up and put one word on the screen — colonization, missions, indigenous. The colors spread across the screen and students can actually see the structure of the word before they're asked to read or define it.
 
-The geographical names are even more interesting. 'California' itself: Cal (closed) · i (open) · for (r-controlled) · ni (open) · a (open). Four syllable types in one word students already know and care about. That is the ideal instructional moment — high motivation, high decodability, high transfer.`,
+My routine goes like this. I put up one word. I call on a student. What color is this syllable? What is its syllable type? How does that affect the sound of the vowel? That third question is for students who already have the syllable types internalized — it's the extension move. The first two questions are for everyone.
+
+For slightly longer passages, Color Syllables helps students pre-hearse. They can see what's coming in a paragraph before they're asked to read it aloud — which vowel sounds to expect, where the stress might land, what the long words are actually made of. That's meaningful for students who shut down when they hit unfamiliar academic vocabulary.
+
+One thing worth saying directly: California history contains some of the most difficult content in the elementary curriculum. The Gold Rush and the California genocide are not separate stories. Teaching the vocabulary of that history honestly — including the word genocide — is part of the work. The syllable colors don't sanitize the meaning. They just help students access the words so the conversation can happen.`,
   },
   {
     id:3, pinned:false,
     title:"A Note on Spanish Syllables and Bilingual Learners",
     date:"March 2026",
-    preview:"Spanish is more phonetically consistent than English. The color system maps onto it in ways that are actually easier to teach — and the framework transfers directly between languages.",
-    content:`Spanish is more phonetically consistent than English, which means the color system maps onto it in ways that are actually easier to teach.
+    preview:"Spanish is more phonetically consistent than English. Students who speak it already have strong intuition for patterns that English learners have to be explicitly taught. That's an asset, not a gap.",
+    content:`Spanish is more phonetically consistent than English. Students who speak it already have strong phonological intuition for patterns that English learners have to be explicitly taught. That's an asset, not a gap — and it's one that structured literacy instruction doesn't always know how to use.
 
-The dominant syllable type in Spanish is the open syllable — a consonant followed by a vowel, with the vowel saying its name clearly. Words like 'mesa,' 'libro,' and 'pueblo' are almost entirely open syllables. Spanish-speaking students already have strong phonological intuition for a pattern that English learners have to be explicitly taught.
+The dominant syllable type in Spanish is the open syllable. A consonant followed by a vowel, vowel says its name. Mesa. Casa. Libro. Numero. Spanish-speaking students have heard and produced thousands of open syllables before they ever sat in a phonics lesson. When you show them that pattern in yellow on a screen and tell them that's called an open syllable and English has it too — something connects.
 
-When a bilingual student runs a Spanish word through the color coder and sees familiar colors, and then runs an English cognate and sees the same pattern echoed, something clicks. The framework transfers. The color makes that transfer visible.
+Color Syllables has a Spanish mode that uses a different five-type system built for Spanish phonology: Abierta, Cerrada, Diptongo, Hiato, and Grupo Consonantico. Same colors as English where the types correspond — Abierta is yellow like Open, Cerrada is red like Closed — so students moving between languages don't lose the visual framework they already know.
 
-Spanish mode uses the same color scheme as English mode — same syllable type, same color — so that students and teachers can see the structural connection between languages rather than treating them as entirely separate systems. The goal is not to teach English as if Spanish does not exist. The goal is to use what students already know to build what they are learning.`,
+The cognate angle is worth building out deliberately. Run 'nation' through the coder in English, then run 'nacion' in Spanish. The syllable structures are close enough that students can see the relationship in the colors, not just recognize it from the spelling. That's a different kind of knowing.
+
+The goal is not to treat Spanish and English as two separate systems running on parallel tracks in the same brain. The goal is to make the connections between them visible. The color is a tool for that.`,
   },
   {
     id:4, pinned:false,
     title:"ELL Bridge Strategies in a Structured Literacy Classroom",
     date:"March 2026",
-    preview:"English Language Learners often have strong phonological skills in their home language that transfer directly to English decoding. Structured literacy gives us a framework to make that transfer explicit.",
-    content:`English Language Learners often have strong phonological skills in their home language that transfer directly to English decoding. Structured literacy gives us a framework to make that transfer explicit and visible.
+    preview:"Most ELL support frameworks and most structured literacy frameworks were built independently of each other. Teachers working with both populations feel that gap every day. Here's how I think about closing it.",
+    content:`Most ELL support frameworks and most structured literacy frameworks were built independently of each other. Teachers working with both populations feel that gap every day — you're essentially running two programs for students who need them to be one program.
 
-The challenge is that most ELL support frameworks and most structured literacy frameworks were developed independently of each other. Teachers often feel like they are running two separate programs for overlapping students. Color Syllables is built to bridge that gap.
+The place where they can connect is at the level of language structure. Both frameworks care about how sounds work, how words are built, how meaning is carried by form. Structured literacy just has more explicit tools for making that visible. Color coding is one of them.
 
-Cognate awareness is one of the most powerful tools available. Spanish-English cognates — words that share Latin roots — tend to be multisyllabic, Latinate, and structurally analyzable. 'Nation' and 'nación.' 'Education' and 'educación.' Running both versions through the color coder shows students not just that the words are related, but exactly where and how the syllable structures align and diverge.
+In a classroom with Spanish-speaking ELL students, I think about three entry points specifically.
 
-Stress and accent marks are another bridge point. Spanish uses written accent marks to show stress exceptions. English uses syllable type to predict stress patterns. Teaching both systems alongside each other using the same color framework builds metalinguistic awareness that benefits students in both languages.`,
+The first is cognate awareness. Spanish-English cognates are often the longest, most academic words in a passage — exactly the words ELL students are most likely to skip or guess at. Running a cognate pair through the coder in both languages shows students the structural overlap. 'Education' and 'educacion' aren't just similar in meaning — they're built from the same parts in a similar pattern. The colors make that argument without requiring students to already know the vocabulary to understand it.
+
+The second is the open syllable transfer. Spanish-dominant students already know how open syllables sound. They don't know the English term for it, and they may not know it applies to English words too, but the phonological knowledge is there. Naming it and showing it in color gives them credit for what they already know while building toward the English rule.
+
+The third is pre-reading exposure. Before a student reads a content-area passage aloud — social studies, science, anything with dense vocabulary — running it through Color Syllables gives them a visual map of what they're about to encounter. Where the long words are. What the vowels are doing. Which syllables carry the stress. For a student who is simultaneously decoding in a second language and processing new content, that preview matters.
+
+None of this replaces direct language instruction. But it gives students one more access point, and in my experience that's often the one that makes the difference.`,
   },
 ];
 
@@ -399,7 +413,7 @@ export default function App() {
       <h2>Color-Coded Passage</h2><div class="output">${tokenHTML}</div>
       <script>window.onload=()=>window.print()<\/script></body></html>`);
     pw.document.close();
-  }, [tokens, dark, fontSize, focusType, spanishMode]);
+  }, [tokens, dark, fontSize, focusType, spanishMode, activeTypes, activeTypeKeys]);
 
   // ── CYCLE SYLLABLE ────────────────────────────────────────────────────────
   const cycleSyllable = (tokenIdx, sylIdx, e) => {
