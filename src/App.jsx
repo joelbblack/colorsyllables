@@ -18,16 +18,26 @@ const fontFaceCSS = `
 @keyframes slideUp { from { transform:translateY(100%); opacity:0; } to { transform:translateY(0); opacity:1; } }
 `;
 
-// ── SYLLABLE TYPES ────────────────────────────────────────────────────────────
+// ── ENGLISH SYLLABLE TYPES ────────────────────────────────────────────────────
 const TYPES = {
-  "Closed":       { light:"#C0392B", dark:"#E74C3C", label:"Closed",       pattern:"CVC",  rule:"Vowel is SHORT — closed in by a consonant" },
-  "Magic-E":      { light:"#1A6EA8", dark:"#4FA3E0", label:"Magic-E",      pattern:"CVCe", rule:"Silent e makes the vowel say its LONG name" },
-  "Vowel Team":   { light:"#1B9A59", dark:"#3DC87A", label:"Vowel Team",   pattern:"CVVC", rule:"Two vowels work together to make ONE sound" },
-  "R-Controlled": { light:"#7B3FA8", dark:"#B06FE0", label:"R-Controlled", pattern:"VR",   rule:"The r takes over and changes the vowel sound" },
-  "Open":         { light:"#C49A00", dark:"#F0C430", label:"Open",         pattern:"CV",   rule:"Ends in a vowel — says its LONG name" },
-  "C+le":         { light:"#4A6080", dark:"#8AAAC8", label:"C+le",         pattern:"Cle",  rule:"Consonant + le found at the END of a word" },
+  "Closed":       { light:"#C0392B", dark:"#E74C3C", label:"Closed",       rule:"Vowel is SHORT — closed in by a consonant" },
+  "Magic-E":      { light:"#1A6EA8", dark:"#4FA3E0", label:"Magic-E",      rule:"Silent e makes the vowel say its LONG name" },
+  "Vowel Team":   { light:"#1B9A59", dark:"#3DC87A", label:"Vowel Team",   rule:"Two vowels work together to make ONE sound" },
+  "R-Controlled": { light:"#7B3FA8", dark:"#B06FE0", label:"R-Controlled", rule:"The r takes over and changes the vowel sound" },
+  "Open":         { light:"#C49A00", dark:"#F0C430", label:"Open",         rule:"Ends in a vowel — says its LONG name" },
+  "C+le":         { light:"#4A6080", dark:"#8AAAC8", label:"C+le",         rule:"Consonant + le found at the END of a word" },
 };
 const TYPE_KEYS = Object.keys(TYPES);
+
+// ── SPANISH SYLLABLE TYPES ────────────────────────────────────────────────────
+const TYPES_ES = {
+  "Abierta":            { light:"#C49A00", dark:"#F0C430", label:"Abierta",      rule:"Termina en vocal — la más común en español (ca·sa, me·sa)" },
+  "Cerrada":            { light:"#C0392B", dark:"#E74C3C", label:"Cerrada",      rule:"Termina en consonante — vocal corta (pan, sol, cam·po)" },
+  "Diptongo":           { light:"#1B9A59", dark:"#3DC87A", label:"Diptongo",     rule:"Vocal fuerte + débil en una sílaba (bue·no, rei·na, au·la)" },
+  "Hiato":              { light:"#1A6EA8", dark:"#4FA3E0", label:"Hiato",        rule:"Dos vocales fuertes en sílabas separadas (ma·es·tro, po·e·ma)" },
+  "Grupo Consonántico": { light:"#7B3FA8", dark:"#B06FE0", label:"Grupo Cons.",  rule:"Grupo bl,br,cl,cr… inseparable (bra·zo, pla·to, flo·res)" },
+};
+const TYPE_KEYS_ES = Object.keys(TYPES_ES);
 
 // ── NAV ITEMS ─────────────────────────────────────────────────────────────────
 const NAV_ITEMS = [
@@ -146,18 +156,17 @@ Preserve all spaces/newlines/punctuation. Concatenated syllable texts must equal
 
 const SPANISH_SYSTEM_PROMPT = `Eres un experto en fonética del español estructurado.
 
-Divide cada palabra en sílabas y clasifica CADA sílaba usando estos tipos (colores iguales al inglés para consistencia visual):
-- Open (sílaba abierta CV — ma, ca, mi, no, bu)
-- Closed (sílaba cerrada CVC/VC — pan, sol, col, man, es)
-- Vowel Team (hiato, dos vocales fuertes separadas — ma-es-tro, po-e-ma, le-er)
-- R-Controlled (sílaba con r fuerte — ar, or, er, con rr)
-- Magic-E (no común en español — usar raramente si aplica)
-- C+le (no aplica en español — no usar)
+Divide cada palabra en sílabas y clasifica CADA sílaba como exactamente uno de estos 5 tipos:
+- Abierta (sílaba que termina en vocal — ca, me, si, no, lu) — la más común en español
+- Cerrada (sílaba que termina en consonante — pan, sol, es, cam, ten)
+- Diptongo (vocal fuerte+débil O débil+fuerte en UNA sílaba — bue·no, rei·na, au·la, tie·rra, cua·tro)
+- Hiato (dos vocales fuertes en sílabas SEPARADAS — ma·es·tro, po·e·ma, le·er, ca·os)
+- Grupo Consonántico (sílaba que contiene grupo bl,br,cl,cr,dr,fl,fr,gl,gr,pl,pr,tr inseparable — bra·zo, pla·to, flo·res, cla·se)
 
-Reglas clave: consonante sola entre vocales va con la siguiente vocal (ca-sa). Grupos consonánticos bl,br,cl,cr,dr,fl,fr,gl,gr,pl,pr,tr son inseparables y van con la vocal siguiente.
+Reglas de división: consonante sola entre vocales va con la vocal siguiente (ca-sa no cas-a). Los grupos consonánticos bl,br,cl,cr,dr,fl,fr,gl,gr,pl,pr,tr son inseparables. Otras combinaciones consonánticas se dividen (ac-ción, car-ta).
 
 Return ONLY valid JSON array. No markdown, no explanation.
-Each token: word={"type":"word","syllables":[{"text":"ca","stype":"Open"},{"text":"sa","stype":"Open"}]}, space={"type":"space","text":" "}, newline={"type":"space","text":"\\n"}, punct={"type":"punct","text":"."}
+Each token: word={"type":"word","syllables":[{"text":"ca","stype":"Abierta"},{"text":"sa","stype":"Abierta"}]}, space={"type":"space","text":" "}, newline={"type":"space","text":"\\n"}, punct={"type":"punct","text":"."}
 Las sílabas concatenadas deben igualar exactamente la palabra original.`;
 
 // ── APP ───────────────────────────────────────────────────────────────────────
@@ -213,6 +222,10 @@ export default function App() {
     navActive:"#FFFFFF",
   };
   const font = dyslexic ? "'OpenDyslexic', sans-serif" : "'Nunito', system-ui, sans-serif";
+
+  // Active type system — switches between English and Spanish
+  const activeTypes    = spanishMode ? TYPES_ES : TYPES;
+  const activeTypeKeys = spanishMode ? TYPE_KEYS_ES : TYPE_KEYS;
 
   // ── TTS ───────────────────────────────────────────────────────────────────
   const speak = useCallback((text) => {
@@ -276,7 +289,7 @@ export default function App() {
   const handleSplitChange = (val) => {
     setEditSplit(val);
     const chunks = val.split("/").filter(c => c.length > 0);
-    setEditTypes(prev => chunks.map((_, i) => prev[i] || "Closed"));
+    setEditTypes(prev => chunks.map((_, i) => prev[i] || activeTypeKeys[0]));
   };
   const setChunkType = (ci, stype) => setEditTypes(prev => prev.map((t, i) => i === ci ? stype : t));
   const confirmEdit = () => {
@@ -285,7 +298,7 @@ export default function App() {
     if (!chunks.length) { closeEditor(); return; }
     setTokens(prev => prev.map((token, ti) =>
       ti !== editingToken.tokenIdx ? token
-        : { ...token, syllables: chunks.map((text, i) => ({ text, stype: editTypes[i] || "Closed" })) }
+        : { ...token, syllables: chunks.map((text, i) => ({ text, stype: editTypes[i] || activeTypeKeys[0] })) }
     ));
     closeEditor();
   };
@@ -337,7 +350,7 @@ export default function App() {
 
   // ── STATS ─────────────────────────────────────────────────────────────────
   const stats = tokens ? (() => {
-    const counts = Object.fromEntries(TYPE_KEYS.map(k => [k, 0]));
+    const counts = Object.fromEntries(activeTypeKeys.map(k => [k, 0]));
     let total = 0;
     tokens.forEach(t => {
       if (t.type === "word") t.syllables?.forEach(s => {
@@ -363,7 +376,7 @@ export default function App() {
       if (token.type === "punct") return `<span style="color:#444">${token.text}</span>`;
       if (token.type === "word" && token.syllables) {
         return token.syllables.map(syl => {
-          const t = TYPES[syl.stype] || TYPES["Closed"];
+          const t = activeTypes[syl.stype] || activeTypes[activeTypeKeys[0]];
           const c = dark ? t.dark : t.light;
           const dimmed = focusType && syl.stype !== focusType;
           return `<span style="color:${dimmed?"#ccc":c};font-weight:700;border-bottom:3px solid ${dimmed?"#ccc":c};padding-bottom:1px">${syl.text}</span>`;
@@ -371,7 +384,7 @@ export default function App() {
       }
       return token.text || "";
     }).join("");
-    const legendHTML = Object.entries(TYPES).map(([,t]) => {
+    const legendHTML = Object.entries(activeTypes).map(([,t]) => {
       const c = dark ? t.dark : t.light;
       return `<span style="display:inline-flex;align-items:center;gap:5px;margin:3px 5px;padding:3px 9px;border:2px solid ${c};border-radius:6px"><span style="width:11px;height:11px;border-radius:3px;background:${c};display:inline-block"></span><span style="font-size:12px;font-weight:700;color:${c}">${t.label}</span></span>`;
     }).join("");
@@ -386,7 +399,7 @@ export default function App() {
       <h2>Color-Coded Passage</h2><div class="output">${tokenHTML}</div>
       <script>window.onload=()=>window.print()<\/script></body></html>`);
     pw.document.close();
-  }, [tokens, dark, fontSize, focusType]);
+  }, [tokens, dark, fontSize, focusType, spanishMode]);
 
   // ── CYCLE SYLLABLE ────────────────────────────────────────────────────────
   const cycleSyllable = (tokenIdx, sylIdx, e) => {
@@ -395,8 +408,8 @@ export default function App() {
       if (ti !== tokenIdx || token.type !== "word") return token;
       return { ...token, syllables: token.syllables.map((syl, si) => {
         if (si !== sylIdx) return syl;
-        const next = (TYPE_KEYS.indexOf(syl.stype) + 1) % TYPE_KEYS.length;
-        return { ...syl, stype: TYPE_KEYS[next] };
+        const next = (activeTypeKeys.indexOf(syl.stype) + 1) % activeTypeKeys.length;
+        return { ...syl, stype: activeTypeKeys[next] };
       })};
     }));
   };
@@ -416,7 +429,7 @@ export default function App() {
           onKeyDown={e => { if (e.key === "Enter") speakMode ? speak(wordText) : openEditor(ti); }}
           style={{ outline: isEditing ? `3px solid ${D.accent}` : "none", borderRadius:3, cursor:"pointer" }}>
           {token.syllables.map((syl, si) => {
-            const t      = TYPES[syl.stype] || TYPES["Closed"];
+            const t      = activeTypes[syl.stype] || activeTypes[activeTypeKeys[0]];
             const c      = dark ? t.dark : t.light;
             const dimmed = focusType && syl.stype !== focusType;
             return (
@@ -464,20 +477,20 @@ export default function App() {
       <div style={{display:"flex", flexWrap:"wrap", gap:14, flex:1, alignItems:"flex-start"}}>
         {editChunks.map((chunk, ci) => {
           const at = editTypes[ci] || "Closed";
-          const ac = dark ? TYPES[at]?.dark : TYPES[at]?.light;
+          const ac = dark ? activeTypes[at]?.dark : activeTypes[at]?.light;
           return (
             <div key={ci} style={{display:"flex", flexDirection:"column", gap:6}}>
               <div style={{ fontSize:20, fontWeight:900, color:ac, borderBottom:`3px solid ${ac}`,
                 paddingBottom:2, letterSpacing:1, minWidth:32, textAlign:"center" }}>{chunk}</div>
               <div style={{display:"flex", flexWrap:"wrap", gap:4}}>
-                {TYPE_KEYS.map(key => {
-                  const t = TYPES[key]; const c = dark ? t.dark : t.light; const active = at === key;
+                {activeTypeKeys.map(key => {
+                  const t = activeTypes[key]; const c = dark ? t.dark : t.light; const active = at === key;
                   return (
                     <button key={key} onClick={() => setChunkType(ci, key)} aria-pressed={active}
                       style={{ background: active ? c : "transparent", border:`2px solid ${c}`,
                         color: active ? "white" : c, borderRadius:6, padding:"3px 9px",
                         fontSize:12, fontWeight:700, cursor:"pointer", transition:"all 0.15s", outline:"none" }}>
-                      {t.label}
+                      {spanishMode ? t.labelES : t.label}
                     </button>
                   );
                 })}
@@ -609,7 +622,7 @@ export default function App() {
             <div style={{display:"flex", flexWrap:"wrap", gap:5, alignItems:"center"}}>
               <span style={{fontSize:11, fontWeight:700, color:D.subText, textTransform:"uppercase", letterSpacing:1, marginRight:2}}>Focus:</span>
               <button onClick={() => setFocusType(null)} style={{...btn(!focusType, D.accent), fontSize:12, padding:"3px 9px"}}>All</button>
-              {Object.entries(TYPES).map(([key, t]) => {
+              {Object.entries(activeTypes).map(([key, t]) => {
                 const c = dark ? t.dark : t.light; const active = focusType === key;
                 return (
                   <button key={key} onClick={() => setFocusType(active ? null : key)}
@@ -679,7 +692,7 @@ export default function App() {
                 {stats.total} syllables analyzed
               </div>
               <div style={{display:"flex", flexDirection:"column", gap:5}}>
-                {Object.entries(TYPES).map(([key, t]) => {
+                {Object.entries(activeTypes).map(([key, t]) => {
                   const count = stats.counts[key] || 0;
                   if (!count) return null;
                   const pct = Math.round(count / stats.total * 100);
