@@ -1,4 +1,7 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useWordCorrections } from "./hooks/useWordCorrections";
+import SyllableAdminDashboard from "./components/SyllableAdminDashboard";
+import CorrectionModal from "./components/CorrectionModal";
 
 // ── FONTS ─────────────────────────────────────────────────────────────────────
 const fontFaceCSS = `
@@ -53,6 +56,7 @@ const NAV_ITEMS = [
   { id:"coaches",   icon:"🏫", label:"For Coaches"     },
   { id:"ell",       icon:"🌐", label:"ELL Strategies"  },
   { id:"about",     icon:"ℹ️", label:"About"           },
+  { id:"corrections", icon:"🔬", label:"Correction Lab" },
 ];
 
 // ── SAMPLE PASSAGES ───────────────────────────────────────────────────────────
@@ -186,6 +190,8 @@ Las sílabas concatenadas deben igualar exactamente la palabra original.`;
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
 
+  const { logCorrection } = useWordCorrections();
+
   // ── STATE ─────────────────────────────────────────────────────────────────
   const [inputText, setInputText]       = useState("");
   const [tokens, setTokens]             = useState(null);
@@ -210,6 +216,7 @@ export default function App() {
   const [editingToken, setEditingToken] = useState(null);
   const [editSplit, setEditSplit]       = useState("");
   const [editTypes, setEditTypes]       = useState([]);
+  const [correctionModalOpen, setCorrectionModalOpen] = useState(false);
   const editorInputRef                  = useRef(null);
   const editorBarRef                    = useRef(null);
   const outputRef                       = useRef(null);
@@ -280,13 +287,17 @@ export default function App() {
           messages:[{ role:"user", content: inputText }],
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Translation failed (${res.status})`);
+      }
       const data = await res.json();
       const translated = data.content?.find(b => b.type === "text")?.text || "";
       setInputText(translated);
       setSpanishMode(true);
       setTokens(null);
       setShowSaveBar(false);
-    } catch(e) { console.error(e); }
+    } catch(e) { setError("Translation failed — try again."); console.error(e); }
     finally { setTranslating(false); }
   }, [inputText]);
 
@@ -310,6 +321,14 @@ export default function App() {
     if (!editingToken) return;
     const chunks = editSplit.split("/").filter(c => c.length > 0);
     if (!chunks.length) { closeEditor(); return; }
+    const original = tokens[editingToken.tokenIdx];
+    const aiSyll = original.syllables.map(s => s.text).join("·");
+    const userSyll = chunks.join("·");
+    logCorrection({
+      word: original.syllables.map(s => s.text).join(""),
+      aiSyllabification: aiSyll,
+      userSyllabification: userSyll,
+    });
     setTokens(prev => prev.map((token, ti) =>
       ti !== editingToken.tokenIdx ? token
         : { ...token, syllables: chunks.map((text, i) => ({ text, stype: editTypes[i] || activeTypeKeys[0] })) }
@@ -353,6 +372,10 @@ export default function App() {
           messages:[{ role:"user", content:`Analyze this text:\n\n${inputText}` }],
         }),
       });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.error || `Request failed (${res.status})`);
+      }
       const data  = await res.json();
       const raw   = data.content?.find(b => b.type === "text")?.text || "";
       const clean = raw.replace(/```json|```/gi, "").trim();
@@ -533,6 +556,10 @@ export default function App() {
         <button onClick={confirmEdit}
           style={{ background:D.accent, border:"none", color:"white", borderRadius:8, padding:"9px 20px", fontSize:14, fontWeight:800, cursor:"pointer", fontFamily:font }}>
           ✓ Done
+        </button>
+        <button onClick={() => setCorrectionModalOpen(true)}
+          style={{ background:"transparent", border:"2px solid #f59e0b", color:"#f59e0b", borderRadius:8, padding:"7px 20px", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:font }}>
+          ✎ Report Correction
         </button>
         <button onClick={closeEditor}
           style={{ background:"transparent", border:"2px solid rgba(255,255,255,0.3)", color:"rgba(255,255,255,0.6)", borderRadius:8, padding:"7px 20px", fontSize:13, fontWeight:700, cursor:"pointer", fontFamily:font }}>
@@ -1260,11 +1287,33 @@ export default function App() {
           {activePage === "coaches"   && renderCoaches()}
           {activePage === "ell"       && renderELL()}
           {activePage === "about"     && renderAbout()}
+          {activePage === "corrections" && <SyllableAdminDashboard />}
         </main>
       </div>
 
       {/* WORD EDITOR BAR */}
       {wordEditorBar}
+
+      {/* CORRECTION MODAL */}
+      {editingToken && (
+        <CorrectionModal
+          open={correctionModalOpen}
+          word={tokens[editingToken.tokenIdx]?.syllables.map(s => s.text).join("") || ""}
+          aiSyllabification={tokens[editingToken.tokenIdx]?.syllables.map(s => s.text).join("·") || ""}
+          syllableRule={tokens[editingToken.tokenIdx]?.syllables[0]?.stype || null}
+          onSubmit={(corrected) => {
+            const original = tokens[editingToken.tokenIdx];
+            logCorrection({
+              word: original.syllables.map(s => s.text).join(""),
+              aiSyllabification: original.syllables.map(s => s.text).join("·"),
+              userSyllabification: corrected,
+              syllableRule: original.syllables[0]?.stype || null,
+            });
+            setCorrectionModalOpen(false);
+          }}
+          onClose={() => setCorrectionModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

@@ -1,4 +1,5 @@
-const DAILY_LIMIT = 20;
+const DAILY_LIMIT = 50;
+// Note: ipLog resets on serverless cold starts; not persistent across instances.
 const ipLog = new Map();
 
 module.exports = async function handler(req, res) {
@@ -27,6 +28,14 @@ module.exports = async function handler(req, res) {
   }
 
   ipLog.set(key, count + 1);
+
+  if (!process.env.ANTHROPIC_API_KEY) {
+    return res.status(500).json({ error: 'Server misconfiguration: ANTHROPIC_API_KEY is not set.' });
+  }
+
+  if (!req.body || !Array.isArray(req.body.messages)) {
+    return res.status(400).json({ error: 'Invalid request: messages array is required.' });
+  }
 
   try {
     const response = await fetch('https://api.anthropic.com/v1/messages', {
