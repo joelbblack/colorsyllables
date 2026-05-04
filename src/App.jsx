@@ -1,4 +1,5 @@
 import { useState, useCallback, useRef, useEffect } from "react";
+import { useLocation, useNavigate, Link } from "react-router-dom";
 import { useWordCorrections } from "./hooks/useWordCorrections";
 import SyllableAdminDashboard from "./components/SyllableAdminDashboard";
 import CorrectionModal from "./components/CorrectionModal";
@@ -187,10 +188,55 @@ Return ONLY valid JSON array. No markdown, no explanation.
 Each token: word={"type":"word","syllables":[{"text":"ca","stype":"Abierta"},{"text":"sa","stype":"Abierta"}]}, space={"type":"space","text":" "}, newline={"type":"space","text":"\\n"}, punct={"type":"punct","text":"."}
 Las sílabas concatenadas deben igualar exactamente la palabra original.`;
 
+// ── ROUTE → PAGE ID MAPPING ───────────────────────────────────────────────────
+const PATH_TO_PAGE = {
+  "/": "coder",
+  "/library": "library",
+  "/how-to-use": "howto",
+  "/resources": "resources",
+  "/social-studies": "social",
+  "/math-vocab": "math",
+  "/science-vocab": "science",
+  "/blog": "blog",
+  "/for-parents": "parents",
+  "/for-coaches": "coaches",
+  "/ell-strategies": "ell",
+  "/about": "about",
+  "/corrections": "corrections",
+};
+const PAGE_TO_PATH = Object.fromEntries(Object.entries(PATH_TO_PAGE).map(([k, v]) => [v, k]));
+
+const PAGE_TITLES = {
+  coder:       "Color Syllables — Structured Literacy Syllable Tool for Teachers",
+  library:     "Passage Library — Color Syllables",
+  howto:       "How To Use — Color Syllables",
+  resources:   "Science of Reading Resources — Color Syllables",
+  social:      "Social Studies Passages — Color Syllables",
+  math:        "Math Vocabulary — Color Syllables",
+  science:     "Science Vocabulary — Color Syllables",
+  blog:        "Blog — Color Syllables",
+  parents:     "For Parents — Color Syllables",
+  coaches:     "For Instructional Coaches — Color Syllables",
+  ell:         "ELL Strategies — Color Syllables",
+  about:       "About — Color Syllables",
+  corrections: "Correction Lab — Color Syllables",
+};
+
 // ── APP ───────────────────────────────────────────────────────────────────────
 export default function App() {
 
+  const location = useLocation();
+  const navigate = useNavigate();
   const { logCorrection } = useWordCorrections();
+
+  // Derive activePage from URL
+  const activePage = PATH_TO_PAGE[location.pathname] || "coder";
+  const setActivePage = (pageId) => navigate(PAGE_TO_PATH[pageId] || "/");
+
+  // Update document title when page changes
+  useEffect(() => {
+    document.title = PAGE_TITLES[activePage] || PAGE_TITLES.coder;
+  }, [activePage]);
 
   // ── STATE ─────────────────────────────────────────────────────────────────
   const [inputText, setInputText]       = useState("");
@@ -203,7 +249,6 @@ export default function App() {
   const [focusType, setFocusType]       = useState(null);
   const [library, setLibrary]           = useState(QUICK_SAMPLES);
   const [saveName, setSaveName]         = useState("");
-  const [activePage, setActivePage]     = useState("coder");
   const [showSaveBar, setShowSaveBar]   = useState(false);
   const [fullscreen, setFullscreen]     = useState(false);
   const [spanishMode, setSpanishMode]   = useState(false);
@@ -1242,12 +1287,13 @@ export default function App() {
           overflowY:"auto", flexShrink:0, borderRight:"1px solid rgba(255,255,255,0.07)" }}>
           {NAV_ITEMS.map(item => {
             const active = activePage === item.id;
+            const path = PAGE_TO_PATH[item.id] || "/";
             return (
-              <button key={item.id} onClick={() => setActivePage(item.id)}
+              <Link key={item.id} to={path}
                 aria-current={active ? "page" : undefined}
                 style={{
                   display:"flex", alignItems:"center", gap:10,
-                  padding:"12px 14px",
+                  padding:"12px 14px", textDecoration:"none",
                   background: active ? "rgba(255,255,255,0.1)" : "transparent",
                   borderLeft: active ? `3px solid ${D.accent}` : "3px solid transparent",
                   borderTop:"none", borderRight:"none", borderBottom:"none",
@@ -1258,7 +1304,7 @@ export default function App() {
                 }}>
                 <span style={{fontSize:15}}>{item.icon}</span>
                 <span>{item.label}</span>
-              </button>
+              </Link>
             );
           })}
         </nav>
