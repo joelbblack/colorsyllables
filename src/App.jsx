@@ -327,7 +327,7 @@ export default function App() {
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:1000,
+          model:"claude-sonnet-5-5", max_tokens:1000,
           system:"Translate the following English text to Spanish. Return ONLY the translated text. Preserve all line breaks and punctuation.",
           messages:[{ role:"user", content: inputText }],
         }),
@@ -412,7 +412,7 @@ export default function App() {
       const res = await fetch("/api/chat", {
         method:"POST", headers:{"Content-Type":"application/json"},
         body: JSON.stringify({
-          model:"claude-sonnet-4-20250514", max_tokens:4000,
+          model:"claude-sonnet-5-5", max_tokens:4000,
           system: spanishMode ? SPANISH_SYSTEM_PROMPT : SYSTEM_PROMPT,
           messages:[{ role:"user", content:`Analyze this text:\n\n${inputText}` }],
         }),
