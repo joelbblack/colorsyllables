@@ -158,36 +158,6 @@ None of this replaces direct language instruction. But it gives students one mor
   },
 ];
 
-// ── SYSTEM PROMPTS ────────────────────────────────────────────────────────────
-const SYSTEM_PROMPT = `You are a precise phonics expert trained in the six syllable types used in structured literacy.
-
-Break every word into its syllables and classify EACH syllable as exactly one of:
-- Closed (vowel closed in by consonant, short vowel — snap, clap, lev·el)
-- Magic-E (silent e makes vowel long — smile, skate, trade)
-- Vowel Team (two vowels one sound — teach, sail, cool, out, snow)
-- R-Controlled (vowel+r changes sound — storm, start, search)
-- Open (ends in vowel, long sound — sto·ry, sta·ble, go, me)
-- C+le (consonant+le end of word — sta·ble, set·tle, sim·ple)
-
-Return ONLY valid JSON array. No markdown, no explanation.
-Each token: word={"type":"word","syllables":[{"text":"snap","stype":"Closed"}]}, space={"type":"space","text":" "}, newline={"type":"space","text":"\\n"}, punct={"type":"punct","text":"."}
-Preserve all spaces/newlines/punctuation. Concatenated syllable texts must equal original word exactly.`;
-
-const SPANISH_SYSTEM_PROMPT = `Eres un experto en fonética del español estructurado.
-
-Divide cada palabra en sílabas y clasifica CADA sílaba como exactamente uno de estos 5 tipos:
-- Abierta (sílaba que termina en vocal — ca, me, si, no, lu) — la más común en español
-- Cerrada (sílaba que termina en consonante — pan, sol, es, cam, ten)
-- Diptongo (vocal fuerte+débil O débil+fuerte en UNA sílaba — bue·no, rei·na, au·la, tie·rra, cua·tro)
-- Hiato (dos vocales fuertes en sílabas SEPARADAS — ma·es·tro, po·e·ma, le·er, ca·os)
-- Grupo Consonántico (sílaba que contiene grupo bl,br,cl,cr,dr,fl,fr,gl,gr,pl,pr,tr inseparable — bra·zo, pla·to, flo·res, cla·se)
-
-Reglas de división: consonante sola entre vocales va con la vocal siguiente (ca-sa no cas-a). Los grupos consonánticos bl,br,cl,cr,dr,fl,fr,gl,gr,pl,pr,tr son inseparables. Otras combinaciones consonánticas se dividen (ac-ción, car-ta).
-
-Return ONLY valid JSON array. No markdown, no explanation.
-Each token: word={"type":"word","syllables":[{"text":"ca","stype":"Abierta"},{"text":"sa","stype":"Abierta"}]}, space={"type":"space","text":" "}, newline={"type":"space","text":"\\n"}, punct={"type":"punct","text":"."}
-Las sílabas concatenadas deben igualar exactamente la palabra original.`;
-
 // ── ROUTE → PAGE ID MAPPING ───────────────────────────────────────────────────
 const PATH_TO_PAGE = {
   "/": "coder",
@@ -324,20 +294,16 @@ export default function App() {
     if (!inputText.trim()) return;
     setTranslating(true);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/translate", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-5-5", max_tokens:4000, thinking:{ type:"between_tools" },
-          system:"Translate the following English text to Spanish. Return ONLY the translated text. Preserve all line breaks and punctuation.",
-          messages:[{ role:"user", content: inputText }],
-        }),
+        body: JSON.stringify({ text: inputText }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Translation failed (${res.status})`);
       }
       const data = await res.json();
-      const translated = data.content?.find(b => b.type === "text")?.text || "";
+      const translated = data.text || "";
       setInputText(translated);
       setSpanishMode(true);
       setTokens(null);
@@ -373,6 +339,9 @@ export default function App() {
       word: original.syllables.map(s => s.text).join(""),
       aiSyllabification: aiSyll,
       userSyllabification: userSyll,
+      aiSyllables: original.syllables,
+      userSyllables: chunks.map((text, i) => ({ text, stype: editTypes[i] || activeTypeKeys[0] })),
+      lang: spanishMode ? "es" : "en",
     });
     setTokens(prev => prev.map((token, ti) =>
       ti !== editingToken.tokenIdx ? token
@@ -409,22 +378,16 @@ export default function App() {
     if (!inputText.trim()) return;
     setLoading(true); setError(null); setTokens(null); setShowSaveBar(false);
     try {
-      const res = await fetch("/api/chat", {
+      const res = await fetch("/api/analyze", {
         method:"POST", headers:{"Content-Type":"application/json"},
-        body: JSON.stringify({
-          model:"claude-sonnet-5-5", max_tokens:16000, thinking:{ type:"between_tools" },
-          system: spanishMode ? SPANISH_SYSTEM_PROMPT : SYSTEM_PROMPT,
-          messages:[{ role:"user", content:`Analyze this text:\n\n${inputText}` }],
-        }),
+        body: JSON.stringify({ text: inputText, lang: spanishMode ? "es" : "en" }),
       });
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.error || `Request failed (${res.status})`);
       }
-      const data  = await res.json();
-      const raw   = data.content?.find(b => b.type === "text")?.text || "";
-      const clean = raw.replace(/```json|```/gi, "").trim();
-      setTokens(JSON.parse(clean));
+      const data = await res.json();
+      setTokens(data.tokens);
       setShowSaveBar(true);
     } catch(e) { setError("Something went wrong — try again."); console.error(e); }
     finally { setLoading(false); }
@@ -1354,6 +1317,7 @@ export default function App() {
               aiSyllabification: original.syllables.map(s => s.text).join("·"),
               userSyllabification: corrected,
               syllableRule: original.syllables[0]?.stype || null,
+              lang: spanishMode ? "es" : "en",
             });
             setCorrectionModalOpen(false);
           }}
