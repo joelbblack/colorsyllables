@@ -14,6 +14,9 @@ const sbUrl = process.env.SUPABASE_URL || process.env.VITE_CORRECTIONS_SUPABASE_
 const sbKey = process.env.SUPABASE_SECRET_KEY;
 // Without the secret key the app still works, just without caching.
 const supabase = sbUrl && sbKey ? createClient(sbUrl, sbKey, { auth: { persistSession: false } }) : null;
+if (!supabase) {
+  console.warn(`Word cache disabled: missing ${[!sbUrl && 'SUPABASE_URL / VITE_CORRECTIONS_SUPABASE_URL', !sbKey && 'SUPABASE_SECRET_KEY'].filter(Boolean).join(' and ')}`);
+}
 
 const TOKEN_RE = /(\p{L}+(?:['’]\p{L}+)*)|(\r?\n)|([^\S\n]+)|([^\p{L}\s]+)/gu;
 
