@@ -10,7 +10,7 @@ const MAX_CHARS = 8000;
 const AI_CHUNK = 120;      // words per Claude request
 const LOOKUP_CHUNK = 200;  // words per cache query
 
-const sbUrl = process.env.SUPABASE_URL || process.env.VITE_CORRECTIONS_SUPABASE_URL;
+const sbUrl = process.env.SUPABASE_URL || process.env.VITE_CORRECTIONS_SUPABASE_URL || 'https://csqfvnfoqgmjrqngvsxa.supabase.co';
 const sbKey = process.env.SUPABASE_SECRET_KEY;
 // Without the secret key the app still works, just without caching.
 const supabase = sbUrl && sbKey ? createClient(sbUrl, sbKey, { auth: { persistSession: false } }) : null;
