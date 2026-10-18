@@ -41,6 +41,9 @@ export function useWordCorrections() {
    * @param {string} params.userSyllabification  - User's correction (e.g. "be·cause")
    * @param {string} [params.syllableRule]       - CLOVER category if applicable
    * @param {string} [params.contextSnippet]     - Surrounding sentence (optional)
+   * @param {Array}  [params.aiSyllables]        - AI's typed split [{text, stype}]
+   * @param {Array}  [params.userSyllables]      - User's typed split [{text, stype}]
+   * @param {string} [params.lang]               - 'en' or 'es'
    */
   const logCorrection = useCallback(async ({
     word,
@@ -48,17 +51,23 @@ export function useWordCorrections() {
     userSyllabification,
     syllableRule = null,
     contextSnippet = null,
+    aiSyllables = null,
+    userSyllables = null,
+    lang = 'en',
   }) => {
     if (!supabase) return;
 
     // Normalize
     const normalizedWord = word.toLowerCase().trim();
+    const typedSplit = userSyllables?.map(s => ({ text: s.text.toLowerCase(), stype: s.stype })) ?? null;
+    const typesChanged = typedSplit && aiSyllables &&
+      JSON.stringify(typedSplit) !== JSON.stringify(aiSyllables.map(s => ({ text: s.text.toLowerCase(), stype: s.stype })));
 
     // Skip if nothing changed
-    if (aiSyllabification === userSyllabification) return;
+    if (aiSyllabification === userSyllabification && !typesChanged) return;
 
     // Debounce: skip if this exact correction is already in-flight
-    const key = `${normalizedWord}|${userSyllabification}`;
+    const key = `${lang}|${normalizedWord}|${JSON.stringify(typedSplit) || userSyllabification}`;
     if (pendingRef.current.has(key)) return;
     pendingRef.current.add(key);
 
@@ -73,6 +82,8 @@ export function useWordCorrections() {
           session_id: getSessionId(),
           user_agent: navigator.userAgent.slice(0, 200),
           context_snippet: contextSnippet?.slice(0, 500) ?? null,
+          user_syllables: typedSplit,
+          lang,
         });
 
       if (error) {
